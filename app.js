@@ -1,15 +1,19 @@
 const express = require('express');
 const AWS = require('aws-sdk');
+const cors = require('cors');
 const app = express();
 
-// Configura AWS con tus credenciales
+// Habilitar CORS para aceptar solicitudes de tu dominio de Amplify
+app.use(cors());
+
+// Analizar solicitudes JSON
+app.use(express.json());
+
+// Configura AWS con tus credenciales (esto podría ser necesario solo si se ejecuta localmente)
 AWS.config.update({ region: 'REGION' }); // reemplaza 'REGION' con tu región de AWS
 
 // Crea una instancia del cliente de Lambda
 const lambda = new AWS.Lambda();
-
-app.use(express.static('public'));
-app.use(express.json());
 
 app.post('/submit', (req, res) => {
     const data = req.body;
@@ -25,11 +29,10 @@ app.post('/submit', (req, res) => {
     lambda.invoke(lambdaParams, (err, lambdaResult) => {
         if (err) {
             console.error('Error al invocar Lambda', err);
-            res.status(500).send('Error del servidor');
-        } else {
-            // Envía la respuesta de la función Lambda al cliente
-            res.json(JSON.parse(lambdaResult.Payload));
+            return res.status(500).send('Error del servidor');
         }
+        // Envía la respuesta de la función Lambda al cliente
+        res.json(JSON.parse(lambdaResult.Payload));
     });
 });
 
